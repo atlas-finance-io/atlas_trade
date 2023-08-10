@@ -2,3 +2,4 @@ ib_insync
 backtrader
 IbPy2
 pygame
+pandas
