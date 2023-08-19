@@ -1,9 +1,8 @@
-import ib_constants
 from ib_insync import *
 
 
 class IBScanner:
-    def __init__(self, ib, instrument_type, location_code, scan_code, tags_dict, host='localhost', port=7497, client_id=1):
+    def __init__(self, ib, instrument_type, location_code, scan_code, tags_dict):
         self.ib = ib
         self.instrument_type = instrument_type
         self.location_code = location_code

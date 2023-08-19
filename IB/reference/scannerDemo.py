@@ -28,20 +28,3 @@ scanData = ib.reqScannerData(sub, [], tagValues)
 
 symbols = [sd.contractDetails.contract.symbol for sd in scanData]
 print(symbols)
-
-xml = ib.reqScannerParameters()
-
-path = 'scanner_parameters.xml'
-with open(path, 'w') as f:
-    f.write(xml)
-
-webbrowser.open(path)
-
-
-# parse XML document
-tree = ET.fromstring(xml)
-
-scanCodes = [e.text for e in tree.findall('.//scanCode')]
-
-print(len(scanCodes), 'scan codes, showing the ones starting with "TOP":')
-print([sc for sc in scanCodes])

@@ -3,3 +3,5 @@ backtrader
 IbPy2
 pygame
 pandas
+ibapi
+matplotlib
