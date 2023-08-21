@@ -39,7 +39,8 @@ class StockStrategy(bt.Strategy):
             print(
                 f"closed at {self.data.close[0]}, which is above previous high of {previous_highest_high}, let's buy!")
             # uncomment this if you want to buy
-            # self.buy_bracket(limitprice=self.data.close[0]+1.00, price=self.data.close[0], stopprice=self.data.close[0]-0.50)
+            self.buy_bracket(
+                limitprice=self.data.close[0]+1.00, price=self.data.close[0], stopprice=self.data.close[0]-0.50)
 
 
 def start():
