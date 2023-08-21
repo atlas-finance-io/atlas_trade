@@ -1,4 +1,3 @@
-import datetime
 from ib_insync import *
 import pandas as pd
 import time
@@ -51,15 +50,15 @@ class IBHistoricals:
         current_bars.to_csv(self.contract.symbol + '.csv', index=False)
 
 
-ib = IB()
-ib.connect('127.0.0.1', 7497, clientId=1)
+# ib = IB()
+# ib.connect('127.0.0.1', 7497, clientId=1)
 
-tesla_contract = Stock('TSLA', 'SMART', 'USD')
+# tesla_contract = Stock('TSLA', 'SMART', 'USD')
 
-historicals = IBHistoricals(ib, tesla_contract)
+# historicals = IBHistoricals(ib, tesla_contract)
 
-df = historicals.fetch_historicals()
+# df = historicals.fetch_historicals()
 
-historicals.save_csv(df)
+# historicals.save_csv(df)
 
-ib.disconnect()
+# ib.disconnect()

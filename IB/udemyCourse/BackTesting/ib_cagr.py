@@ -79,11 +79,11 @@ bh_data = historicalData["AMZN"].copy()
 bh_data["ret"]=bh_data["Close"].pct_change()
 
 def CAGR(DF):
-    "function to calculate the Cumulative Annual Growth Rate; DF should have ret column"
+    "function to calculate the Cumulative Annual Growth Rate; DF should have return column"
     df = DF.copy()
-    df["cum_return"] = (1 + df["ret"]).cumprod()
+    df["cumulative_return"] = (1 + df["return"]).cumprod()
     n = len(df)/252
-    CAGR = (df["cum_return"].tolist()[-1])**(1/n) - 1
+    CAGR = (df["cumulative_return"].tolist()[-1])**(1/n) - 1
     return CAGR
 
 CAGR(bh_data)    

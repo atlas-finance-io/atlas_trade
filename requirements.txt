@@ -5,3 +5,6 @@ pygame
 pandas
 ibapi
 matplotlib
+backtesting
+numpy
+requests

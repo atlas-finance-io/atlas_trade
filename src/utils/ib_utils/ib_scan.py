@@ -1,15 +1,20 @@
 from ib_insync import *
 
+"""
+Scans are limited to a maximum result of 50 results per scan code, and only 10 API scans 
+can be active at a time.
+"""
+
 
 class IBScanner:
-    def __init__(self, ib, instrument_type, location_code, scan_code, tags_dict):
+    def __init__(self, ib, instrument_type, location_code, scan_code, tags_dict={}):
         self.ib = ib
         self.instrument_type = instrument_type
         self.location_code = location_code
         self.scan_code = scan_code
         self.tags_dict = tags_dict
 
-    def run_scan(self):
+    def run_blocking_scan(self):
         sub = ScannerSubscription(
             instrument=self.instrument_type,
             locationCode=self.location_code,
@@ -24,32 +29,32 @@ class IBScanner:
         return symbols
 
 
-ib = IB()
-ib.connect('127.0.0.1', 7497, clientId=1)
+# ib = IB()
+# ib.connect('127.0.0.1', 7497, clientId=1)
 
-# Example tags dictionary
-tags_dict = {
-    'changePercAbove': '20',
-    'priceAbove': '5',
-    'priceBelow': '50'
-}
+# # Example tags dictionary
+# tags_dict = {
+#     'changePercAbove': '20',
+#     'priceAbove': '5',
+#     'priceBelow': '50'
+# }
 
 
-# Create an instance of IBScanner
-scanner = IBScanner(
-    ib,
-    instrument_type='STK',
-    location_code='STK.US.MAJOR',
-    scan_code='TOP_PERC_GAIN',
-    tags_dict=tags_dict
-)
+# # Create an instance of IBScanner
+# scanner = IBScanner(
+#     ib,
+#     instrument_type='STK',
+#     location_code='STK.US.MAJOR',
+#     scan_code='TOP_PERC_GAIN',
+#     tags_dict=tags_dict
+# )
 
-# Run the scanner
-symbols = scanner.run_scan()
+# # Run the scanner
+# symbols = scanner.run_scan()
 
-# Print the scanned symbols
-print("Scanned Symbols:")
-for symbol in symbols:
-    print(symbol)
+# # Print the scanned symbols
+# print("Scanned Symbols:")
+# for symbol in symbols:
+#     print(symbol)
 
-ib.disconnect()
+# ib.disconnect()
