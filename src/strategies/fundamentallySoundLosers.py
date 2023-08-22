@@ -81,6 +81,10 @@ def main():
         if symbol in position_df['Symbol'].values:
             continue
 
+        if (fundamentally_sound(symbol)):
+            contract = Stock(symbol, 'SMART', 'USD')
+            ib.bracketOrder('BUY')
+
 
 # extract and store historical data in dataframe repetitively
 starttime = time.time()
