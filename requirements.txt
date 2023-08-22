@@ -8,3 +8,4 @@ matplotlib
 backtesting
 numpy
 requests
+boto3

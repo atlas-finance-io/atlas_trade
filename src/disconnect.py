@@ -4,8 +4,6 @@ import socket
 ib_ips_ports = [
     ("127.0.0.1", 4001),  # TWS Live
     ("127.0.0.1", 4002),  # TWS Paper
-    ("127.0.0.1", 4003),  # TWS GATEWAY Live
-    ("127.0.0.1", 4004),  # TWS GATEWAY Paper
     ("127.0.0.1", 7497),  # TWS Paper
     ("127.0.0.1", 7496),  # TWS Live
     # Add more as needed
