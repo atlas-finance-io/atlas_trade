@@ -2,8 +2,8 @@ import boto3
 import csv
 
 # Configure the AWS credentials and region
-aws_access_key_id = 'AKIAYBRRVOADM7WTEU4R'
-aws_secret_access_key = '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'
+aws_access_key_id = ''
+aws_secret_access_key = ''
 region_name = 'us-east-1'
 
 # Create a DynamoDB client
