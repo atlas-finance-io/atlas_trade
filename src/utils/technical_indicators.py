@@ -9,7 +9,7 @@ def average_true_range(DF, n=14):
     df['L-PC'] = abs(df['low']-df['close'].shift(1))
     df['TR'] = df[['H-L', 'H-PC', 'L-PC']].max(axis=1, skipna=False)
     df['ATR'] = df['TR'].ewm(com=n, min_periods=n).mean()
-    return df['ATR']
+    return df
 
 
 def macd(DF, a=12, b=26, c=9):
@@ -21,22 +21,19 @@ def macd(DF, a=12, b=26, c=9):
     return df
 
 
-def relative_strength_index(DF, period=14):
-    # Calculate the difference between current value and previous value
-    delta = DF.diff()
-
-    # Separate gains (positive changes) and losses (negative changes)
+def relative_strength_index(df, window=14):
+    delta = df['close'].diff()
     gain = delta.where(delta > 0, 0)
     loss = -delta.where(delta < 0, 0)
 
-    # Calculate the average gain and average loss over a rolling window
-    avg_gain = gain.rolling(window=period).mean()
-    avg_loss = loss.rolling(window=period).mean()
+    avg_gain = gain.rolling(window=window).mean()
+    avg_loss = loss.rolling(window=window).mean()
 
-    # Calculate the relative strength (RS) and then the RSI
     rs = avg_gain / avg_loss
     rsi = 100 - (100 / (1 + rs))
-    return rsi
+
+    df['rsi'] = rsi
+    return df
 
 
 def average_directional_index(df, period=14):
@@ -72,7 +69,7 @@ def average_directional_index(df, period=14):
     return df
 
 
-def calculate_stochastic_oscillator(df, n=14):
+def stochastic_oscillator(df, n=14):
     high = df['high']
     low = df['low']
     close = df['close']
