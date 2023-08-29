@@ -12,3 +12,4 @@ boto3
 python-binance
 binance
 nasdaq-data-link
+statsmodels
