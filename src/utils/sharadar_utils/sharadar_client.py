@@ -21,7 +21,7 @@ import requests
 
 
 class SharadarClient:
-    def __init__(self, api_key='zxLNKQydu_qNXQ2tZ7vz'):
+    def __init__(self, api_key=''):
         self.base_url = "https://data.nasdaq.com/api/v3/datatables/SHARADAR/"
         self.api_key = api_key
 

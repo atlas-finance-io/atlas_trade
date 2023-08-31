@@ -204,8 +204,8 @@ class FuturesTrader():
 
 if __name__ == "__main__":
 
-    api_key = "48ec6d428ba946e5cb872151695dface9bbe82558174f2cf46b67b91e362394b"
-    secret_key = "1d20d89e04bd9268ef2ab7c14db137e9d6490869b7ec703de4b423a3cb14c417"
+    api_key = ""
+    secret_key = ""
 
     client = Client(api_key=api_key, api_secret=secret_key,
                     tld="com", testnet=True)
