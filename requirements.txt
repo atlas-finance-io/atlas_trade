@@ -10,3 +10,6 @@ numpy
 requests
 boto3
 python-binance
+binance
+nasdaq-data-link
+scikit-learn
