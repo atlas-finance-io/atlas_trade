@@ -21,7 +21,8 @@ def macd(DF, a=12, b=26, c=9):
     return df
 
 
-def relative_strength_index(df, window=14):
+def relative_strength_index(DF, window=14):
+    df = DF.copy()
     delta = df['close'].diff()
     gain = delta.where(delta > 0, 0)
     loss = -delta.where(delta < 0, 0)
@@ -36,7 +37,8 @@ def relative_strength_index(df, window=14):
     return df
 
 
-def average_directional_index(df, period=14):
+def average_directional_index(DF, period=14):
+    df = DF.copy()
     # Calculate +DM and -DM
     df['high_lag'] = df['high'].shift(1)
     df['low_lag'] = df['low'].shift(1)
@@ -69,7 +71,8 @@ def average_directional_index(df, period=14):
     return df
 
 
-def stochastic_oscillator(df, n=14):
+def stochastic_oscillator(DF, n=14):
+    df = DF.copy()
     high = df['high']
     low = df['low']
     close = df['close']

@@ -114,9 +114,12 @@ capital = 1000
 
 def dataDataframe(TradeApp_obj, symbols, symbol):
     "returns extracted historical data in dataframe format"
-    df = pd.DataFrame(TradeApp_obj.data[symbols.index(symbol)])
-    df.set_index("Date", inplace=True)
-    return df
+    try:
+        df = pd.DataFrame(TradeApp_obj.data[symbols.index(symbol)])
+        df.set_index("Date", inplace=True)
+        return df
+    except KeyError as e:
+        print(f"KeyError encountered: {e}")
 
 
 def MACD(DF, a=12, b=26, c=9):
