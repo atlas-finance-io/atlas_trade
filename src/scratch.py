@@ -1,24 +1,12 @@
+import base64
 
-from ib_insync import *
-import pandas as pd
-import time
-# Import the Historicals class from ib_historicals.py
-from utils.ib_utils.ib_historicals import IBHistoricals
-from utils.technical_indicators import average_true_range, macd, relative_strength_index
+encoded_string = "aHR0cHM6Ly90bnM0bHBnbXppaXlwbnh4emVsNXNzNW55dTBuZnRvbC5sYW1iZGEtdXJsLnVzLWVhc3QtMS5vbi5hd3MvcmFtcC1jaGFsbGVuZ2UtaW5zdHJ1Y3Rpb25zLw=="
 
-ib = IB()
-ib.connect('127.0.0.1', 7497, clientId=1)
+# Decode the Base64 string
+decoded_bytes = base64.b64decode(encoded_string)
 
-tesla_contract = Stock('TSLA', 'SMART', 'USD')
+# Convert bytes to a string
+decoded_string = decoded_bytes.decode('utf-8')
 
-historicals = IBHistoricals(ib, tesla_contract, duration='1 Y')
-
-df = historicals.fetch_historicals()
-
-print(df)
-
-df_atr = average_true_range(df)
-
-df_atr.to_csv(tesla_contract.symbol + '_ATR.csv', index=False)
-
-ib.disconnect()
+# Print the decoded string
+print(decoded_string)

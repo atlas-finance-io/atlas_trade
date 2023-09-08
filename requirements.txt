@@ -13,3 +13,5 @@ python-binance
 binance
 nasdaq-data-link
 scikit-learn
+python-dotenv
+ta
