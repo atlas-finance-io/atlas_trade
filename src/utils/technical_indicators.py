@@ -9,6 +9,7 @@ def average_true_range(DF, n=14):
     df['L-PC'] = abs(df['low']-df['close'].shift(1))
     df['TR'] = df[['H-L', 'H-PC', 'L-PC']].max(axis=1, skipna=False)
     df['ATR'] = df['TR'].ewm(com=n, min_periods=n).mean()
+    df.drop(columns=['H-L', 'H-PC', 'L-PC', 'TR'], inplace=True)
     return df
 
 
