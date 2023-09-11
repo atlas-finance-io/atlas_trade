@@ -7,8 +7,9 @@ import time
 
 import os
 from dotenv import load_dotenv
-api_key = os.getenv("BINANCE_FUTURES_TESTNET_API_KEY")
-secret_key = os.getenv("BINANCE_FUTURES_TESTNET_SK")
+load_dotenv()  # Load the .env file
+API_KEY = os.environ.get('BINANCE_FUTURES_TESTNET_API_KEY')
+API_SECRET = os.environ.get('BINANCE_FUTURES_TESTNET_SK')
 
 
 class FuturesTrader():
@@ -201,7 +202,7 @@ class FuturesTrader():
 
 if __name__ == "__main__":
 
-    client = Client(api_key="48ec6d428ba946e5cb872151695dface9bbe82558174f2cf46b67b91e362394b", api_secret="1d20d89e04bd9268ef2ab7c14db137e9d6490869b7ec703de4b423a3cb14c417",
+    client = Client(api_key=API_KEY, api_secret=API_SECRET,
                     tld="com", testnet=True)
 
     symbol = "BTCUSDT"
