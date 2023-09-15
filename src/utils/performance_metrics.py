@@ -17,7 +17,7 @@ def sharpe_ratio(df, risk_free_rate=0.03):
 
 def sortino_ratio(df, risk_free_rate=0.03):
     expected_return = df['returns'].mean() * 252
-    downside_volatility = df[df['log_returreturnsns'] < 0]['returns'].std(
+    downside_volatility = df[df['returns'] < 0]['returns'].std(
     ) * (252 ** 0.5)  # Annualized downside volatility
     return (expected_return - risk_free_rate) / downside_volatility
 

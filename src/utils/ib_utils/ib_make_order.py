@@ -93,5 +93,5 @@ bracket = BracketOrder(parentOrderId=ib.client.getReqId(),
                        takeProfitLimitPrice=8.86 + last_row_atr['ATR'] * 2,
                        stopLossPrice=8.86 - last_row_atr['ATR'] * 1.5)
 for o in bracket:
-    o.usePriceMgmtAlgo = True
+
     order = ib.placeOrder(contract, o)
