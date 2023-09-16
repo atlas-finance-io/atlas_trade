@@ -177,6 +177,7 @@ class MeanRevertingCrypto():
 
         # extract data from trades object
         df = pd.DataFrame(trades)
+        print(df)
         columns = ["qty", "quoteQty", "commission", "realizedPnl"]
         for column in columns:
             try:
