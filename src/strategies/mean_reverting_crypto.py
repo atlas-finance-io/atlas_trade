@@ -11,8 +11,8 @@ import sys
 from ..utils.technical_indicators import *
 
 load_dotenv()  # Load the .env file
-API_KEY = os.environ.get('BINANCE_PROD_API_KEY')
-API_SECRET = os.environ.get('BINANCE_PROD_SK')
+API_KEY = os.environ.get('BINANCE_FUTURES_TESTNET_API_KEY')
+API_SECRET = os.environ.get('BINANCE_FUTURES_TESTNET_SK')
 
 
 class MeanRevertingCrypto():
@@ -105,31 +105,19 @@ class MeanRevertingCrypto():
                 self.execute_trades()
 
     def define_strategy(self):
-
         data = self.data.copy()
-
-        # ******************** define your strategy here ************************
         data = relative_strength_index(data)
         data = bollinger_bands(data)
-
         data.dropna(inplace=True)
 
-        # Buy Conditions
-        bcond1 = data['rsi'].iloc[-1] < 30
-        bcond2 = data['close'].iloc[-1] <= data['lower_band'].iloc[-1]
-
-        buy_cond = bcond1 & bcond2
-
-        # Sell Conditions
-        scond1 = data['rsi'].iloc[-1] > 70
-        scond2 = data['close'].iloc[-1] >= data['upper_band'].iloc[-1]
-
-        sell_cond = scond1 & scond2
-
-        data["position"] = 0
-        data.loc[buy_cond, "position"] = 1
-        data.loc[sell_cond, "position"] = -1
-
+        # Buy and Sell Conditions
+        data["position"] = np.where(
+            (data['rsi'] < 30) & (data['close'] <= data['lower_band']), 1,
+            np.where((data['rsi'] > 70) & (
+                data['close'] >= data['upper_band']), -1, 0)
+        )
+        latest_row = data.iloc[-1]
+        print(latest_row)
         self.prepared_data = data.copy()
 
     def execute_trades(self):
@@ -207,7 +195,7 @@ class MeanRevertingCrypto():
 if __name__ == "__main__":
 
     client = Client(api_key=API_KEY, api_secret=API_SECRET,
-                    tld="com")
+                    tld="com", testnet=True)
 
     symbol = "ETHUSDT"
     bar_length = "1m"
