@@ -69,7 +69,7 @@ class StatArbCrypto():
             "taker buy quote asset volume", "ignore"
         ]
         df["date"] = pd.to_datetime(df["open time"], unit="ms")
-        df = df[["date", "open", "high", "low", "close",
+        df = df[["date", "close",
                  "volume"]].copy()
         df.set_index("date", inplace=True)
         for column in df.columns:
@@ -119,9 +119,6 @@ class StatArbCrypto():
         symbol = msg["ps"]  # Extracting symbol
         event_time = pd.to_datetime(msg["E"], unit="ms")
         start_time = pd.to_datetime(msg["k"]["t"], unit="ms")
-        open = float(msg["k"]["o"])
-        high = float(msg["k"]["h"])
-        low = float(msg["k"]["l"])
         close = float(msg["k"]["c"])
         volume = float(msg["k"]["v"])
         complete = msg["k"]["x"]
@@ -134,16 +131,16 @@ class StatArbCrypto():
         else:
             return  # If the symbol doesn't match, don't process further
 
-        if event_time >= datetime(2023, 9, 20, 23, 3):
+        if event_time >= datetime(2023, 9, 21, 16, 55):
             hedge_ratio = self.compute_hedge_ratio(
                 self.dataOne['close'], self.dataTwo['close'])
             self.twm.stop()
 
-            self.comparePair.reset_index(inplace=True)
-            self.comparePair.to_csv('resultCompare.csv', index=False)
+            # self.comparePair.reset_index(inplace=True)
+            self.comparePair.to_csv('resultCompare.csv', index=True)
 
-            self.preparedData.reset_index(inplace=True)
-            self.preparedData.to_csv('result.csv', index=False)
+            # self.preparedData.reset_index(inplace=True)
+            self.preparedData.to_csv('result.csv', index=True)
 
             if self.position in [1, -1]:  # If we have an active position
                 side_one = "SELL" if self.position == 1 else "BUY"
@@ -162,43 +159,57 @@ class StatArbCrypto():
             print(".", end="", flush=True)
 
             data_to_update.loc[start_time] = [
-                open, high, low, close, volume, complete]
+                close, volume, complete]
 
             # If the latest bar is complete, prepare features and define the strategy/trading positions
             if complete:
                 self.define_strategy()
                 self.execute_trades()
 
-    def define_strategy(self):
-        # Create a copy of dataOne
-        working_data = self.dataOne.copy()
-
-        # Calculate hedge ratio
-        self.hedge_ratio = self.compute_hedge_ratio(
-            working_data['close'], self.dataTwo['close'])
-
-        # Calculate the spread and z-score
-        working_data['spread'] = self.compute_spread(
-            working_data['close'], self.dataTwo['close'], self.hedge_ratio)
-        mean_spread = working_data['spread'].mean()
-        std_spread = working_data['spread'].std()
-        working_data['zscore'] = (
-            working_data['spread'] - mean_spread) / std_spread
-
-        # Determine trading signals based on z-score
-        if working_data['zscore'].iloc[-1] > 1.8:
-            self.trading_signal = -1  # Short spread
-        elif working_data['zscore'].iloc[-1] < -1.8:
-            self.trading_signal = 1   # Long spread
+    def determine_signal(self, zscore):
+        if zscore > 1.8:
+            return -1  # Short spread
+        elif zscore < -1.8:
+            return 1   # Long spread
         else:
-            self.trading_signal = 0   # Neutral
+            return 0   # Neutral
 
-        self.comparePair = self.dataTwo.copy()
+    def define_strategy(self):
+        try:
+            # Create a copy of dataOne
+            working_data = self.dataOne.copy()
 
-        self.preparedData = working_data
+            # Calculate hedge ratio
+            self.hedge_ratio = self.compute_hedge_ratio(
+                working_data['close'], self.dataTwo['close'])
+
+            # Calculate the spread
+            working_data['spread'] = self.compute_spread(
+                working_data['close'], self.dataTwo['close'], self.hedge_ratio)
+
+            # Calculate the running mean and standard deviation of the spread
+            working_data['mean_spread'] = working_data['spread'].expanding().mean()
+            working_data['std_spread'] = working_data['spread'].expanding().std()
+
+            # Calculate z-score
+            working_data['zscore'] = (
+                working_data['spread'] - working_data['mean_spread']) / working_data['std_spread']
+
+            # Determine trading signals based on z-score for each row
+            working_data['trading_signal'] = working_data['zscore'].apply(
+                self.determine_signal)
+
+            self.comparePair = self.dataTwo.copy()
+            self.preparedData = working_data
+
+        except Exception as e:
+            print(f"Error in define_strategy: {e}")
 
     def execute_trades(self):
-        if self.trading_signal == 1 and self.position == 0:
+        # Get the last row's trading signal
+        last_signal = self.preparedData['trading_signal'].iloc[-1]
+
+        if last_signal == 1 and self.position == 0:
             # Long spread: Buy stockOne and short stockTwo
             order1 = self.client.futures_create_order(
                 symbol=self.symbolOne, side="BUY", type="MARKET", quantity=self.units)
@@ -208,7 +219,7 @@ class StatArbCrypto():
             self.report_trade(order2, "SHORT SPREAD", self.symbolTwo)
             self.position = 1
 
-        elif self.trading_signal == -1 and self.position == 0:
+        elif last_signal == -1 and self.position == 0:
             # Short spread: Short stockOne and buy stockTwo
             order1 = self.client.futures_create_order(
                 symbol=self.symbolOne, side="SELL", type="MARKET", quantity=self.units)
@@ -218,7 +229,7 @@ class StatArbCrypto():
             self.report_trade(order2, "LONG SPREAD", self.symbolTwo)
             self.position = -1
 
-        elif self.trading_signal == 0 and self.position != 0:
+        elif last_signal == 0 and self.position != 0:
             # Neutralize the position
             side_one = "SELL" if self.position == 1 else "BUY"
             side_two = "BUY" if self.position == 1 else "SELL"
@@ -274,5 +285,5 @@ if __name__ == "__main__":
     bot = StatArbCrypto(symbolOne, symbolTwo, bar_length)
     bot.leverage = leverage  # setting the leverage if it's an attribute of the bot
 
-    historical_days = 60
+    historical_days = 30
     bot.start_trading(historical_days)
