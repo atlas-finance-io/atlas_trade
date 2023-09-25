@@ -171,8 +171,10 @@ class StatArbCrypto():
 
         hedge_ratio = self.compute_hedge_ratio(
             self.dataOne['close'], self.dataTwo['close'])
+
+        latest_position = self.dataOne["position"].iloc[-1]
         # If position is long the spread -> Buy symbol1 and Sell symbol2
-        if self.dataOne["position"].iloc[-1] == 1:
+        if latest_position == 1:
             # Buy symbol1
             order1 = self.client.futures_create_order(
                 symbol=self.symbolOne, side="BUY", type="MARKET", quantity=self.units)
