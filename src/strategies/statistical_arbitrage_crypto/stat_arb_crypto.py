@@ -21,7 +21,7 @@ class StatArbCrypto():
         self.symbolOne = symbolOne
         self.symbolTwo = symbolTwo
         self.bar_length = bar_length
-        self.units = 1  # Define default units
+        self.units = 100  # Define default units
         self.leverage = 1  # Define default leverage
         self.trading_signal = 0  # -1, 0, 1 for short, neutral, long respectively
         self.cum_profits = 0  # initialize cumulative profits to 0
@@ -131,7 +131,7 @@ class StatArbCrypto():
         else:
             return  # If the symbol doesn't match, don't process further
 
-        if event_time >= datetime(2023, 9, 21, 16, 55):
+        if event_time >= datetime(2023, 9, 27, 19, 3):
             hedge_ratio = self.compute_hedge_ratio(
                 self.dataOne['close'], self.dataTwo['close'])
             self.twm.stop()
@@ -166,15 +166,7 @@ class StatArbCrypto():
                 self.define_strategy()
                 self.execute_trades()
 
-    def determine_signal(self, zscore):
-        if zscore > 1.8:
-            return -1  # Short spread
-        elif zscore < -1.8:
-            return 1   # Long spread
-        else:
-            return 0   # Neutral
-
-    def define_strategy(self):
+    def define_strategy(self, window_size=336):
         try:
             # Create a copy of dataOne
             working_data = self.dataOne.copy()
@@ -187,59 +179,76 @@ class StatArbCrypto():
             working_data['spread'] = self.compute_spread(
                 working_data['close'], self.dataTwo['close'], self.hedge_ratio)
 
-            # Calculate the running mean and standard deviation of the spread
-            working_data['mean_spread'] = working_data['spread'].expanding().mean()
-            working_data['std_spread'] = working_data['spread'].expanding().std()
+            # Calculate the rolling mean and standard deviation of the spread
+            working_data['mean_spread'] = working_data['spread'].rolling(
+                window=window_size).mean()
+            working_data['std_spread'] = working_data['spread'].rolling(
+                window=window_size).std()
 
             # Calculate z-score
             working_data['zscore'] = (
                 working_data['spread'] - working_data['mean_spread']) / working_data['std_spread']
 
-            # Determine trading signals based on z-score for each row
-            working_data['trading_signal'] = working_data['zscore'].apply(
-                self.determine_signal)
+            # Determine trading signals based on z-score
+            working_data['trading_signal'] = np.where(
+                working_data['zscore'] < -2, 1,  # Buy condition
+                np.where(working_data['zscore'] > 2, -1,  # Sell condition
+                         np.where((working_data['zscore'] > 0) & (working_data['zscore'].shift(1) <= 0), 0,  # Crossed above zero line
+                                  np.where((working_data['zscore'] < 0) & (working_data['zscore'].shift(1) >= 0), 0,  # Crossed below zero line
+                                           np.NAN))))  # Default value
+
+            # Fill NaN values with previous signal
+            working_data['trading_signal'].fillna(
+                method='ffill', inplace=True)
 
             self.comparePair = self.dataTwo.copy()
+
             self.preparedData = working_data
+            print(self.preparedData.tail(5))
 
         except Exception as e:
             print(f"Error in define_strategy: {e}")
 
     def execute_trades(self):
-        # Get the last row's trading signal
-        last_signal = self.preparedData['trading_signal'].iloc[-1]
 
-        if last_signal == 1 and self.position == 0:
-            # Long spread: Buy stockOne and short stockTwo
-            order1 = self.client.futures_create_order(
-                symbol=self.symbolOne, side="BUY", type="MARKET", quantity=self.units)
-            order2 = self.client.futures_create_order(
-                symbol=self.symbolTwo, side="SELL", type="MARKET", quantity=self.units * self.hedge_ratio)
-            self.report_trade(order1, "LONG SPREAD", self.symbolOne)
-            self.report_trade(order2, "SHORT SPREAD", self.symbolTwo)
-            self.position = 1
+        try:
+            # Get the last row's trading signal
+            last_signal = self.preparedData['trading_signal'].iloc[-1]
 
-        elif last_signal == -1 and self.position == 0:
-            # Short spread: Short stockOne and buy stockTwo
-            order1 = self.client.futures_create_order(
-                symbol=self.symbolOne, side="SELL", type="MARKET", quantity=self.units)
-            order2 = self.client.futures_create_order(
-                symbol=self.symbolTwo, side="BUY", type="MARKET", quantity=self.units * self.hedge_ratio)
-            self.report_trade(order1, "SHORT SPREAD", self.symbolOne)
-            self.report_trade(order2, "LONG SPREAD", self.symbolTwo)
-            self.position = -1
+            if last_signal == 1 and self.position == 0:
+                # Long spread: Buy stockOne and short stockTwo
+                order1 = self.client.futures_create_order(
+                    symbol=self.symbolOne, side="BUY", type="MARKET", quantity=self.units)
+                order2 = self.client.futures_create_order(
+                    symbol=self.symbolTwo, side="SELL", type="MARKET", quantity=self.units * self.hedge_ratio)
+                self.report_trade(order1, "LONG SPREAD", self.symbolOne)
+                self.report_trade(order2, "SHORT SPREAD", self.symbolTwo)
+                self.position = 1
 
-        elif last_signal == 0 and self.position != 0:
-            # Neutralize the position
-            side_one = "SELL" if self.position == 1 else "BUY"
-            side_two = "BUY" if self.position == 1 else "SELL"
-            order1 = self.client.futures_create_order(
-                symbol=self.symbolOne, side=side_one, type="MARKET", quantity=self.units)
-            order2 = self.client.futures_create_order(
-                symbol=self.symbolTwo, side=side_two, type="MARKET", quantity=self.units * self.hedge_ratio)
-            self.report_trade(order1, "GOING NEUTRAL", self.symbolOne)
-            self.report_trade(order2, "GOING NEUTRAL", self.symbolTwo)
-            self.position = 0
+            elif last_signal == -1 and self.position == 0:
+                # Short spread: Short stockOne and buy stockTwo
+                order1 = self.client.futures_create_order(
+                    symbol=self.symbolOne, side="SELL", type="MARKET", quantity=self.units)
+                order2 = self.client.futures_create_order(
+                    symbol=self.symbolTwo, side="BUY", type="MARKET", quantity=self.units * self.hedge_ratio)
+                self.report_trade(order1, "SHORT SPREAD", self.symbolOne)
+                self.report_trade(order2, "LONG SPREAD", self.symbolTwo)
+                self.position = -1
+
+            elif last_signal == 0 and self.position != 0:
+                # Neutralize the position
+                side_one = "SELL" if self.position == 1 else "BUY"
+                side_two = "BUY" if self.position == 1 else "SELL"
+                order1 = self.client.futures_create_order(
+                    symbol=self.symbolOne, side=side_one, type="MARKET", quantity=self.units)
+                order2 = self.client.futures_create_order(
+                    symbol=self.symbolTwo, side=side_two, type="MARKET", quantity=self.units * self.hedge_ratio)
+                self.report_trade(order1, "GOING NEUTRAL", self.symbolOne)
+                self.report_trade(order2, "GOING NEUTRAL", self.symbolTwo)
+                self.position = 0
+
+        except Exception as e:
+            print(f"Error in execute trades: {e}")
 
     def report_trade(self, order, going, symbol):
         time.sleep(0.1)
@@ -283,7 +292,7 @@ if __name__ == "__main__":
     leverage = 10
 
     bot = StatArbCrypto(symbolOne, symbolTwo, bar_length)
-    bot.leverage = leverage  # setting the leverage if it's an attribute of the bot
+    bot.leverage = leverage
 
-    historical_days = 30
+    historical_days = 60
     bot.start_trading(historical_days)
