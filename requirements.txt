@@ -18,3 +18,4 @@ ta
 ccxt
 seaborn
 statsmodels
+joblib
