@@ -215,6 +215,20 @@ class StatArbCrypto():
             # Get the last row's trading signal
             last_signal = self.preparedData['trading_signal'].iloc[-1]
 
+            # Get account information
+            account_info = self.client.futures_account()
+            balance = float(account_info['totalWalletBalance'])
+
+            # Calculate the size of trade based on available balance and leverage
+            # Assuming 5x leverage for simplicity
+            trade_size = balance * 5
+
+            # Split allocation
+            long_size = trade_size / 2
+            short_size = trade_size / 2
+            # Get the last row's trading signal
+            last_signal = self.preparedData['trading_signal'].iloc[-1]
+
             if last_signal == 1 and self.position == 0:
                 # Long spread: Buy stockOne and short stockTwo
                 order1 = self.client.futures_create_order(

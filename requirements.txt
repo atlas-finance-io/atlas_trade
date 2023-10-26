@@ -19,3 +19,4 @@ ccxt
 seaborn
 statsmodels
 joblib
+schedule
