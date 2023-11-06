@@ -82,6 +82,8 @@ class FuturesTrader():
         volume = float(msg["k"]["v"])
         complete = msg["k"]["x"]
 
+        print(msg)
+
         # stop trading session
         if event_time >= datetime(2023, 8, 25, 17, 30):
             self.twm.stop()

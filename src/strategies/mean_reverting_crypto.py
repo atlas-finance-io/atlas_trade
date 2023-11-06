@@ -74,8 +74,10 @@ class MeanRevertingCrypto():
         volume = float(msg["k"]["v"])
         complete = msg["k"]["x"]
 
+        print(msg)
+
         # stop trading session
-        if event_time >= datetime(2023, 9, 25, 17, 30):
+        if event_time >= datetime(2023, 9, 25, 17, 35):
             self.twm.stop()
             if self.position == 1:
                 order = client.futures_create_order(

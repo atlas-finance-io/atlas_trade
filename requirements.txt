@@ -15,3 +15,8 @@ nasdaq-data-link
 scikit-learn
 python-dotenv
 ta
+ccxt
+seaborn
+statsmodels
+joblib
+schedule
