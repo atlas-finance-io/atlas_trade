@@ -20,3 +20,4 @@ seaborn
 statsmodels
 joblib
 schedule
+pykalman
