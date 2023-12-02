@@ -8,7 +8,7 @@ from binance import ThreadedWebsocketManager
 from binance.client import Client
 import sys
 
-from ..utils.technical_indicators import *
+from ...utils.technical_indicators import *
 
 load_dotenv()  # Load the .env file
 API_KEY = os.environ.get('BINANCE_PROD_API_KEY')
