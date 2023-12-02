@@ -149,7 +149,7 @@ class StatArbBacktester():
             df["rolling_hedge_ratio"] = self.rolling_hedge_ratio(
                 df[self.symbol_two], df[self.symbol_one], self.lookback_window)
             df['calculated_spread'] = df[self.symbol_two] - \
-                0.52 * df[self.symbol_one]
+                df["rolling_hedge_ratio"] * df[self.symbol_one]
 
             df['rolling_mean_spread'] = df['calculated_spread'].rolling(
                 window=self.zscore_window).mean()
@@ -201,8 +201,8 @@ class StatArbBacktester():
                 continue
 
             trading_signal = row['trading_signal']
-            # hedge_ratio = row['rolling_hedge_ratio']
-            hedge_ratio = 0.5233
+            hedge_ratio = row['rolling_hedge_ratio']
+            # hedge_ratio = 0.5233
 
             symbol_one_price = row[self.symbol_one]
             symbol_two_price = row[self.symbol_two]
