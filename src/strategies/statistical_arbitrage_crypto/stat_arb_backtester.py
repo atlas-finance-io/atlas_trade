@@ -82,6 +82,8 @@ class StatArbBacktester():
                 print(f"Error in fetching prices: {e}")
                 break
 
+        df_prices = df_prices[:-2]
+
         # Remove duplicates and sort the dataframe
         df_prices.drop_duplicates(
             subset='timestamp', keep='first', inplace=True)
@@ -375,21 +377,48 @@ class StatArbBacktester():
         df["cumulative_returns"] = df["returns"].cumsum().apply(np.exp)
         df.to_csv('results.csv', index=True)
 
+    def print_performance(self):
+        ''' Calculates and prints various Performance Metrics.
+        '''
+
+        data = self.results.copy()
+        strategy_multiple = round(self.calculate_multiple(data.strategy), 6)
+        cagr = round(self.calculate_cagr(data.strategy), 6)
+        ann_mean = round(self.calculate_annualized_mean(data.strategy), 6)
+        ann_std = round(self.calculate_annualized_std(data.strategy), 6)
+        sharpe = round(self.calculate_sharpe(data.strategy), 6)
+
+        print(100 * "=")
+        print("TRIPLE SMA STRATEGY | INSTRUMENT = {} | SMAs = {}".format(
+            self.symbol, [self.SMA_S, self.SMA_M, self.SMA_L]))
+        print(100 * "-")
+        print("PERFORMANCE MEASURES:")
+        print("\n")
+        print("Multiple (Strategy):         {}".format(strategy_multiple))
+        print(38 * "-")
+        print("\n")
+        print("CAGR:                        {}".format(cagr))
+        print("Annualized Mean:             {}".format(ann_mean))
+        print("Annualized Std:              {}".format(ann_std))
+        print("Sharpe Ratio:                {}".format(sharpe))
+
+        print(100 * "=")
+
     def plot_results(self):
         if self.data is None:
             print("Run backtest first")
         else:
             title = "Symbol One: {} | Symbol Two: = {}".format(
                 self.symbol_one, self.self.symbol_two)
-            self.data[["cumulative_returns", ]].plot(
+            self.data[["cumulative_returns"]].plot(
                 title=title, figsize=(12, 8))
 
 
 exchange = ccxt.binance()
 
-symbol_one = "ATOMUSDT"
-symbol_two = "AXSUSDT"
-position_size = 500
+symbol_one = "ALGOUSDT"
+symbol_two = "ROSEUSDT"
+position_size = 59523
 trading_days = 120
 
 
