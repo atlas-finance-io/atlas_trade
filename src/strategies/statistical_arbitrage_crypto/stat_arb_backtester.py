@@ -82,8 +82,6 @@ class StatArbBacktester():
                 print(f"Error in fetching prices: {e}")
                 break
 
-        df_prices = df_prices[:-2]
-
         # Remove duplicates and sort the dataframe
         df_prices.drop_duplicates(
             subset='timestamp', keep='first', inplace=True)
@@ -326,6 +324,8 @@ class StatArbBacktester():
             # Go Neutral
             elif current_position != 0 and trading_signal == 0:
 
+                portfolio_entry_value = self.entry_tracking['portfolio_entry_value']
+
                 # Update Portfolio Value once we've exited positions
                 if current_position == 1:
 
@@ -416,9 +416,9 @@ class StatArbBacktester():
 
 exchange = ccxt.binance()
 
-symbol_one = "ALGOUSDT"
-symbol_two = "ROSEUSDT"
-position_size = 59523
+symbol_one = "ATOMUSDT"
+symbol_two = "AXSUSDT"
+position_size = 700
 trading_days = 120
 
 
@@ -426,8 +426,8 @@ trading_days = 120
 lower_threshold = -2
 upper_threshold = 2
 exit_threshold = 0.3
-lookback_window = 500
-zscore_window = 30
+lookback_window = 1000
+zscore_window = 360
 
 
 binance_pairs_trader = StatArbBacktester(exchange, symbol_one, symbol_two,
@@ -435,4 +435,5 @@ binance_pairs_trader = StatArbBacktester(exchange, symbol_one, symbol_two,
 binance_pairs_trader.fetch_prices()
 binance_pairs_trader.cointegration_check()
 binance_pairs_trader.generate_signals()
+
 binance_pairs_trader.run_backtest()

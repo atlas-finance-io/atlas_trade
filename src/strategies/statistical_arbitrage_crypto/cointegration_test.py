@@ -107,9 +107,9 @@ class CointegrationTest():
 
         return df_final
 
-    def single_pair_cointegeration_check(self):
-        S1 = self.single_pair_data[self.symbol_one]
-        S2 = self.single_pair_data[self.symbol_two]
+    def single_pair_cointegeration_check(self, recent_bars=2880):
+        S1 = self.single_pair_data[self.symbol_one].tail(recent_bars)
+        S2 = self.single_pair_data[self.symbol_two].tail(recent_bars)
 
         if len(S1) != len(S2):
             print(
@@ -238,6 +238,7 @@ class CointegrationTest():
     def stationary_check(self):
         spread = self.single_pair_data['calculated_spread'].dropna()
         adf_result = adfuller(spread)
+        print("ADF RESULT: ", adf_result[1])
         if adf_result[1] < 0.05:
             print("Null hypothesis that the spread is not stationary cannot be rejected ")
             return True
