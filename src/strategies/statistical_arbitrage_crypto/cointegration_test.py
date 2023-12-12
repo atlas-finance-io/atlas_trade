@@ -17,6 +17,7 @@ class CointegrationTest():
         self.symbol_one = symbol_one
         self.symbol_two = symbol_two
         self.single_pair_data = None
+        self.hedge_ratio = None
 
         self.universe = universe
         self.universe_data = None
@@ -70,6 +71,15 @@ class CointegrationTest():
         df_final.drop_duplicates(
             subset='timestamp', keep='first', inplace=True)
         df_final.sort_values(by='timestamp', inplace=True)
+
+        # Calculate Hedge Ratio over period
+        x = df_final[self.symbol_one]
+        y = df_final[self.symbol_two]
+
+        model = sm.OLS(y, sm.add_constant(x)).fit()
+        hedge_ratio = model.params[1]
+        print(f"Current Hedge Ratio: {hedge_ratio}")
+        self.hedge_ratio = hedge_ratio
 
         self.single_pair_data = df_final
 
@@ -144,10 +154,10 @@ class CointegrationTest():
 
     def generate_zscore(self):
         df = self.single_pair_data.copy()
-        df["rolling_hedge_ratio"] = self.rolling_hedge_ratio(
-            df[self.symbol_two], df[self.symbol_one], self.lookback_window)
+        # df["rolling_hedge_ratio"] = self.rolling_hedge_ratio(
+        #     df[self.symbol_two], df[self.symbol_one], self.lookback_window)
         df['calculated_spread'] = df[self.symbol_two] - \
-            df["rolling_hedge_ratio"] * df[self.symbol_one]
+            self.hedge_ratio * df[self.symbol_one]
 
         df['rolling_mean_spread'] = df['calculated_spread'].rolling(
             window=self.zscore_window).mean()

@@ -15,8 +15,13 @@ class StatArbBacktester():
         self.symbol_two = symbol_two
         self.trading_costs = trading_costs
         self.trading_days = trading_days
+
         self.hedge_ratio = None
-        self.data = None
+        self.data = self.fetch_prices()
+        self.trading_periods_year = (self.data[self.symbol_one].count(
+        ) / ((self.data.index[-1] - self.data.index[0]).days / 365.25))
+
+        self.results = None
         self.entry_tracking = {
             symbol_one: {
                 'units': 0,
@@ -82,6 +87,15 @@ class StatArbBacktester():
                 print(f"Error in fetching prices: {e}")
                 break
 
+        # Calculate Hedge ratio over the whole dataset
+        x = df_prices[self.symbol_one]
+        y = df_prices[self.symbol_two]
+
+        model = sm.OLS(y, sm.add_constant(x)).fit()
+        hedge_ratio = model.params[1]
+        print(f"Current Hedge Ratio: {hedge_ratio}")
+        self.hedge_ratio = hedge_ratio
+
         # Remove duplicates and sort the dataframe
         df_prices.drop_duplicates(
             subset='timestamp', keep='first', inplace=True)
@@ -89,13 +103,12 @@ class StatArbBacktester():
         # Convert 'timestamp' to datetime
         df_prices['date'] = pd.to_datetime(df_prices['timestamp'], unit='ms')
 
-        # Set 'timestamp' as the index
-        df_prices.set_index('timestamp', inplace=True)
+        df_prices.set_index('date', inplace=True)
 
         # Ensure there are no duplicates
         df_prices.drop_duplicates(inplace=True)
 
-        self.data = df_prices
+        return df_prices
 
     def cointegration_check(self):
         x = self.data[self.symbol_one]
@@ -146,10 +159,10 @@ class StatArbBacktester():
             df['symbol_two_position'] = 0
             df['portfolio_value'] = 10000
 
-            df["rolling_hedge_ratio"] = self.rolling_hedge_ratio(
-                df[self.symbol_two], df[self.symbol_one], self.lookback_window)
+            df["hedge_ratio"] = self.hedge_ratio
+
             df['calculated_spread'] = df[self.symbol_two] - \
-                df["rolling_hedge_ratio"] * df[self.symbol_one]
+                df['hedge_ratio'] * df[self.symbol_one]
 
             df['rolling_mean_spread'] = df['calculated_spread'].rolling(
                 window=self.zscore_window).mean()
@@ -201,8 +214,7 @@ class StatArbBacktester():
                 continue
 
             trading_signal = row['trading_signal']
-            hedge_ratio = row['rolling_hedge_ratio']
-            # hedge_ratio = 0.5233
+            hedge_ratio = row['hedge_ratio']
 
             symbol_one_price = row[self.symbol_one]
             symbol_two_price = row[self.symbol_two]
@@ -375,22 +387,44 @@ class StatArbBacktester():
         df['returns'] = np.log(df['portfolio_value'] /
                                df['portfolio_value'].shift(1))
         df["cumulative_returns"] = df["returns"].cumsum().apply(np.exp)
-        df.to_csv('results.csv', index=True)
+        self.results = df
+
+    def calculate_multiple(self, series):
+        return np.exp(series.sum())
+
+    def calculate_cagr(self, series):
+        print("DAYS: ", series.index[-1] - series.index[0])
+        return np.exp(series.sum())**(1/((series.index[-1] - series.index[0]).days / 365.25)) - 1
+
+    def calculate_annualized_mean(self, series):
+        return series.mean() * self.trading_periods_year
+
+    def calculate_annualized_std(self, series):
+        return series.std() * np.sqrt(self.trading_periods_year)
+
+    def calculate_sharpe(self, series):
+        if series.std() == 0:
+            return np.nan
+        else:
+            return self.calculate_cagr(series) / self.calculate_annualized_std(series)
 
     def print_performance(self):
         ''' Calculates and prints various Performance Metrics.
         '''
 
         data = self.results.copy()
-        strategy_multiple = round(self.calculate_multiple(data.strategy), 6)
-        cagr = round(self.calculate_cagr(data.strategy), 6)
-        ann_mean = round(self.calculate_annualized_mean(data.strategy), 6)
-        ann_std = round(self.calculate_annualized_std(data.strategy), 6)
-        sharpe = round(self.calculate_sharpe(data.strategy), 6)
+        data['date'] = pd.to_datetime(data['timestamp'], unit='ms')
+        data.set_index('date', inplace=True)
+
+        strategy_multiple = round(self.calculate_multiple(data.returns), 6)
+        cagr = round(self.calculate_cagr(data.returns), 6)
+        ann_mean = round(self.calculate_annualized_mean(data.returns), 6)
+        ann_std = round(self.calculate_annualized_std(data.returns), 6)
+        sharpe = round(self.calculate_sharpe(data.returns), 6)
 
         print(100 * "=")
-        print("TRIPLE SMA STRATEGY | INSTRUMENT = {} | SMAs = {}".format(
-            self.symbol, [self.SMA_S, self.SMA_M, self.SMA_L]))
+        print("Statistical Arbitrage | Symbol One = {} | Symbol Two = {}".format(
+            self.symbol_one, self.symbol_two))
         print(100 * "-")
         print("PERFORMANCE MEASURES:")
         print("\n")
@@ -403,6 +437,9 @@ class StatArbBacktester():
         print("Sharpe Ratio:                {}".format(sharpe))
 
         print(100 * "=")
+
+        data = data.reset_index(drop=True)
+        data.to_csv('results.csv', index=True)
 
     def plot_results(self):
         if self.data is None:
@@ -427,13 +464,15 @@ lower_threshold = -2
 upper_threshold = 2
 exit_threshold = 0.3
 lookback_window = 1000
-zscore_window = 360
+zscore_window = 30
 
 
 binance_pairs_trader = StatArbBacktester(exchange, symbol_one, symbol_two,
                                          lower_threshold, upper_threshold, exit_threshold, lookback_window, zscore_window, position_size, trading_days)
-binance_pairs_trader.fetch_prices()
+
 binance_pairs_trader.cointegration_check()
 binance_pairs_trader.generate_signals()
 
 binance_pairs_trader.run_backtest()
+
+binance_pairs_trader.print_performance()
