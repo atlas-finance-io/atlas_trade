@@ -6,6 +6,7 @@ import statsmodels.api as sm
 import numpy as np
 import matplotlib.pyplot as plt
 from statsmodels.tsa.stattools import coint
+from pykalman import KalmanFilter
 
 
 class StatArbBacktester():
@@ -145,6 +146,52 @@ class StatArbBacktester():
         hedge_ratios = rolling_results.params.iloc[:, 1]
 
         return hedge_ratios
+
+    def generate_signals_kalman(self):
+        try:
+            if self.data is None:
+                print("Error with fetching market data")
+                return
+
+            df = self.data.copy()
+            df['trading_signal'] = 0
+            df['symbol_one_position'] = 0
+            df['symbol_two_position'] = 0
+            df['portfolio_value'] = 10000
+
+            # Initialize or update Kalman filter
+            if self.kf is None:
+                self.kf = KalmanFilter(initial_state_mean=[0, 0], n_dim_obs=2)
+                self.kf = self.kf.em(
+                    df[[self.symbol_one, self.symbol_two]].values, n_iter=10)
+
+            # Apply Kalman filter to estimate hidden states
+            filtered_states, _ = self.kf.filter(
+                df[[self.symbol_one, self.symbol_two]].values)
+
+            # Extract the updated hedge ratio from the Kalman filter output
+            df['hedge_ratio'] = filtered_states[:, 0]
+
+            # Calculate the spread based on the updated hedge ratio
+            df['calculated_spread'] = df[self.symbol_two] - \
+                df['hedge_ratio'] * df[self.symbol_one]
+
+            # Generate signals based on dynamically determined spread thresholds
+            for i in range(1, len(df)):
+                exit_threshold = self.exit_threshold_multiplier * \
+                    np.std(df.loc[:i, 'calculated_spread'])
+
+                if df.loc[i, 'calculated_spread'] < -exit_threshold:
+                    df.loc[i, 'trading_signal'] = 1
+                elif df.loc[i, 'calculated_spread'] > exit_threshold:
+                    df.loc[i, 'trading_signal'] = -1
+                else:
+                    df.loc[i, 'trading_signal'] = 0
+
+            self.data = df
+
+        except Exception as e:
+            print(f"Error in generate signals: {e}")
 
     def generate_signals(self):
         try:
@@ -464,14 +511,14 @@ lower_threshold = -2
 upper_threshold = 2
 exit_threshold = 0.3
 lookback_window = 1000
-zscore_window = 30
+zscore_window = 120
 
 
 binance_pairs_trader = StatArbBacktester(exchange, symbol_one, symbol_two,
                                          lower_threshold, upper_threshold, exit_threshold, lookback_window, zscore_window, position_size, trading_days)
 
 binance_pairs_trader.cointegration_check()
-binance_pairs_trader.generate_signals()
+binance_pairs_trader.generate_signals_kalman()
 
 binance_pairs_trader.run_backtest()
 
