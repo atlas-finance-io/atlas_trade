@@ -7,7 +7,7 @@ from src.utils.ib_utils.ib_scan import IBScanner
 from src.utils.ib_utils.ib_historicals import IBHistoricals
 from src.utils.ib_utils.ib_portfolio import IBPortfolio
 from src.utils.ib_utils.ib_order import IBOrder
-from src.utils.technical_indicators import *
+from src.strategies.technical.technical_indicators import *
 
 
 class FundamentallySoundLosers:
