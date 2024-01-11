@@ -91,10 +91,10 @@ class StatArbBacktester():
         x = df_prices[self.symbol_one]
         y = df_prices[self.symbol_two]
 
-        model = sm.OLS(y, sm.add_constant(x)).fit()
-        hedge_ratio = model.params[1]
-        print(f"Current Hedge Ratio: {hedge_ratio}")
-        self.hedge_ratio = hedge_ratio
+        # model = sm.OLS(y, sm.add_constant(x)).fit()
+        # hedge_ratio = model.params[1]
+        # print(f"Current Hedge Ratio: {hedge_ratio}")
+        # self.hedge_ratio = hedge_ratio
 
         # Remove duplicates and sort the dataframe
         df_prices.drop_duplicates(
@@ -159,7 +159,7 @@ class StatArbBacktester():
             df['symbol_two_position'] = 0
             df['portfolio_value'] = 10000
 
-            df["hedge_ratio"] = self.hedge_ratio
+            df["hedge_ratio"] = self.rolling_hedge_ratio(df[self.symbol_two], df[self.symbol_one], self.lookback_window)
 
             df['calculated_spread'] = df[self.symbol_two] - \
                 df['hedge_ratio'] * df[self.symbol_one]
@@ -463,7 +463,7 @@ trading_days = 120
 lower_threshold = -2
 upper_threshold = 2
 exit_threshold = 0.3
-lookback_window = 1000
+lookback_window = 500
 zscore_window = 30
 
 
