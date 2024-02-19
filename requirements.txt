@@ -22,3 +22,6 @@ joblib
 schedule
 pykalman
 tabulate
+scipy
+plotly
+tradingeconomics
